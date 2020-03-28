@@ -25,4 +25,13 @@ impl<T: Default> ToyVec<T> {
             .into_boxed_slice() // Box<[T]>に変換する
     }
 
+    // ベクタの長さを返す
+    pub fn len(&self) -> usize {
+        self.len()
+    }
+
+    // ベクタの現在のキャパシティを返す
+    pub fn capacity(&self) -> usize {
+        self.elements.len() // elementsの要素数(len)がToyVecのキャパシティになる
+    }
 }
