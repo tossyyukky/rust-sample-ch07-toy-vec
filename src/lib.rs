@@ -34,4 +34,24 @@ impl<T: Default> ToyVec<T> {
     pub fn capacity(&self) -> usize {
         self.elements.len() // elementsの要素数(len)がToyVecのキャパシティになる
     }
+
+    pub fn push(&mut self, element: T) {
+        if self.len == self.capacity() { // 要素を追加するスペースがないなら
+            self.grow(); // もっと大きいelementsを確保して既存の要素を引っ越す
+        }
+        self.elements[self.len] = element; // 要素を格納する（所有権がムーブする）
+        self.len += 1;
+    }
+
+    pub fn get(&self, index: usize) -> Option<&T> {
+        if index < self.len { // インデックスが範囲内なら
+            Some(&self.elements[index]) // Some(不変の参照)を返す
+        } else {
+            None // 範囲外ならNoneを返す
+        }
+    }
+
+    fn grow(&mut self) {
+        /* 本体は省略 */
+    }
 }
