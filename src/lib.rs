@@ -6,7 +6,7 @@ pub struct ToyVec<T> {
 impl<T: Default> ToyVec<T> {
     // new はキャパシティ（容量）が0のToyVecを作る
     pub fn new() -> Self {
-       Self::with_capacity(0) 
+        Self::with_capacity(0)
     }
 
     // with_capacityは指定されたキャパシティを持つToyVecを作る
@@ -19,7 +19,7 @@ impl<T: Default> ToyVec<T> {
 
     // T型の値がsize個格納できるBox<[T]>を返す
     pub fn allocate_in_heap(size: usize) -> Box<[T]> {
-        std::iter::repeat_with(Default::default())
+        std::iter::repeat_with(Default::default)
             .take(size) // T型のデフォルト値をsize個作り
             .collect::<Vec<_>>() // Vec<T>に収集してから
             .into_boxed_slice() // Box<[T]>に変換する
@@ -27,7 +27,7 @@ impl<T: Default> ToyVec<T> {
 
     // ベクタの長さを返す
     pub fn len(&self) -> usize {
-        self.len()
+        self.len
     }
 
     // ベクタの現在のキャパシティを返す
@@ -36,7 +36,8 @@ impl<T: Default> ToyVec<T> {
     }
 
     pub fn push(&mut self, element: T) {
-        if self.len == self.capacity() { // 要素を追加するスペースがないなら
+        if self.len == self.capacity() {
+            // 要素を追加するスペースがないなら
             self.grow(); // もっと大きいelementsを確保して既存の要素を引っ越す
         }
         self.elements[self.len] = element; // 要素を格納する（所有権がムーブする）
@@ -44,7 +45,8 @@ impl<T: Default> ToyVec<T> {
     }
 
     pub fn get(&self, index: usize) -> Option<&T> {
-        if index < self.len { // インデックスが範囲内なら
+        if index < self.len {
+            // インデックスが範囲内なら
             Some(&self.elements[index]) // Some(不変の参照)を返す
         } else {
             None // 範囲外ならNoneを返す
@@ -79,5 +81,47 @@ impl<T: Default> ToyVec<T> {
             // Box<[T]>::into_vecとVec<T>::into_iterはデータをコピーせずにその場で変換してくれる
             // 効率の良い実装になっている
         }
+    }
+
+    // 説明のためにライフタイムを明示しているが省略可
+    pub fn iter<'vec>(&'vec self) -> Iter<'vec, T> {
+        Iter {
+            elements: &self.elements, // Iter構造体の定義より、ライフタイムは'vecになる
+            len: self.len,
+            pos: 0,
+        }
+    }
+}
+pub struct Iter<'vec, T> {
+    elements: &'vec Box<[T]>, // ToyVec構造体のelementsを指す不変の参照
+    len: usize,               // ToyVecの長さ
+    pos: usize,               // 次に返す要素のインデックス
+}
+impl<'vec, T> Iterator for Iter<'vec, T> {
+    // 関連型（トレイトに関連付いた型）で、このイテレータがイテレートする要素の型を指定する
+    // 関連型は8章で説明
+    type Item = &'vec T;
+
+    // nextメソッドは次の要素を返す
+    // 要素があるなら不変の参照（&T）をSomeで包んで返し、無いときはNoneを返す
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos >= self.len {
+            None
+        } else {
+            let res = Some(&self.elements[self.pos]);
+            self.pos += 1;
+            res
+        }
+    }
+}
+
+// IntoIteratorトレイトを実装するとfor式での繰り返しができるようになる
+impl<'vec, T: Default> IntoIterator for &'vec ToyVec<T> {
+    type Item = &'vec T; // イテレータがイテレートする値の型
+    type IntoIter = Iter<'vec, T>; // into_iterメソッドの戻り値の型
+
+    // &ToyVec<T>に対するトレイト実装なので、selfの型はToyVec<T>ではなく&ToyVec<T>
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
